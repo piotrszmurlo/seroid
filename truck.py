@@ -54,10 +54,10 @@ class AwaitingDispatch(State):
             msg = await self.receive(timeout=10)
             if msg:
                 body = json.loads(msg.body)
-                if body["type"] != "Request Position" and body["collector"] == self.shared_data["self_ref"]:
+                if body["type"] == "Request Position" and body["collector"] == self.shared_data["self_ref"]:
                     await self.send_position(msg.metadata["conversation-id"], msg.metadata["reply-with"])
 
-                if body["type"] != "Dispatch":
+                if body["type"] == "Dispatch":
                     await self.send_confirmation(msg.metadata["conversation-id"], msg.metadata["reply-with"])
                     self.shared_data["current_container"] = body["container"]
                     self.shared_data["current_container_pos"] = (body["position"]["lon"], body["position"]["lat"])
@@ -145,7 +145,7 @@ class Emptying(State):
         self.set_next_state(AwaitingDispatch.name)
 
 
-class Bin(Agent):
+class Truck(Agent):
     def __init__(self, *args, connected_pole, position):
         super().__init__(*args)
         self.connected_pole = connected_pole
