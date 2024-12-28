@@ -1,24 +1,31 @@
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, FSMBehaviour, State
 from spade.message import Message
-from spade.template import Template
-import spade
-import asyncio
+import json
 from asyncio import sleep
 from random import randint
 
-from typing import OrderedDict, TypedDict
+from typing import TypedDict
+from general_functions import add_metadata
 
 class SharedData(TypedDict):
     fullness: int
     max_capacity: int
     connected_pole: str
+    self_ref: str
+    position: tuple[int, int]
 
 
 class BinBehaviour(FSMBehaviour):
-    def __init__(self, connected_pole):
+    def __init__(self, connected_pole, self_ref, position):
         super().__init__()
-        self.shared_data = SharedData(fullness=0, max_capacity=20, connected_pole=connected_pole)
+        self.shared_data = SharedData(
+            fullness=0,
+            max_capacity=20,
+            connected_pole=connected_pole,
+            self_ref=self_ref,
+            position=position
+        )
 
     async def on_start(self):
         pass
@@ -43,7 +50,16 @@ class FillingBehv(State):
                 break
         msg = Message(to=self.shared_data["connected_pole"])
         msg.set_metadata("performative", "inform")
-        msg.body = "filled"  # nie pamiętam pelnej struktury
+        msg.body = {
+            "type": "Container Full",
+            "container": self.shared_data["self_ref"],
+            "position": {
+                "lon": self.shared_data["position"][0],
+                "lat": self.shared_data["position"][0]
+            }
+        }
+        add_metadata(msg)
+
 
         await self.send(msg)
         self.set_next_state("AwaitingPickup")
@@ -53,17 +69,27 @@ class AwaitingPickup(State):
         super().__init__()
         self.shared_data: SharedData = shared_data
     async def run(self):
-        pass
+        while True:  # endless listening for pickup
+            msg = await self.receive(timeout=10)
+            if msg:
+                body = json.loads(msg.body)
+                if body["type"] != "Empty Confirmation":
+                    continue
+                if body["container"] == self.shared_data["self_ref"]:
+                    break
+        self.set_next_state("Filling")
 
 class Bin(Agent):
-    def __init__(self, *args, connected_pole):
+    def __init__(self, *args, connected_pole, position):
         super().__init__(*args)
         self.connected_pole = connected_pole
+        self.position = position
 
     async def setup(self):
         print("SenderAgent started")
-        b = BinBehaviour(self.connected_pole)
+        b = BinBehaviour(self.connected_pole, self.jid, self.position)
         b.add_state("Filling", state=FillingBehv(b.shared_data), initial=True)
         b.add_state("AwaitingPickup", state=AwaitingPickup(b.shared_data))
         b.add_transition(source="Filling", dest="AwaitingPickup")
+        b.add_transition(source="AwaitingPickup", dest="Filling")
         self.add_behaviour(b)
