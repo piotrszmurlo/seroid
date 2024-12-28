@@ -1,5 +1,5 @@
 from spade.agent import Agent
-from spade.behaviour import OneShotBehaviour, FSMBehaviour, State
+from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
 import json
 from asyncio import sleep
@@ -37,6 +37,7 @@ class BinBehaviour(FSMBehaviour):
 
 
 class FillingBehv(State):
+    name = "Filling"
     def __init__(self, shared_data: SharedData):
         super().__init__()
         self.shared_data: SharedData = shared_data
@@ -62,9 +63,10 @@ class FillingBehv(State):
 
 
         await self.send(msg)
-        self.set_next_state("AwaitingPickup")
+        self.set_next_state(AwaitingPickup.name)
 
 class AwaitingPickup(State):
+    name = "AwaitingPickup"
     def __init__(self, shared_data: SharedData):
         super().__init__()
         self.shared_data: SharedData = shared_data
@@ -77,7 +79,9 @@ class AwaitingPickup(State):
                     continue
                 if body["container"] == self.shared_data["self_ref"]:
                     break
-        self.set_next_state("Filling")
+
+        self.shared_data["fullness"] = 0
+        self.set_next_state(FillingBehv.name)
 
 class Bin(Agent):
     def __init__(self, *args, connected_pole, position):
@@ -88,8 +92,8 @@ class Bin(Agent):
     async def setup(self):
         print("SenderAgent started")
         b = BinBehaviour(self.connected_pole, self.jid, self.position)
-        b.add_state("Filling", state=FillingBehv(b.shared_data), initial=True)
-        b.add_state("AwaitingPickup", state=AwaitingPickup(b.shared_data))
-        b.add_transition(source="Filling", dest="AwaitingPickup")
-        b.add_transition(source="AwaitingPickup", dest="Filling")
+        b.add_state(FillingBehv.name, state=FillingBehv(b.shared_data), initial=True)
+        b.add_state(AwaitingPickup.name, state=AwaitingPickup(b.shared_data))
+        b.add_transition(source=FillingBehv.name, dest=AwaitingPickup.name)
+        b.add_transition(source=AwaitingPickup.name, dest=FillingBehv.name)
         self.add_behaviour(b)
