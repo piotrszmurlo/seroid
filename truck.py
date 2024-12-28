@@ -7,7 +7,7 @@ from random import randint
 
 from typing import TypedDict
 from general_functions import add_metadata
-from random import randint
+
 
 class SharedData(TypedDict):
     fullness: int
@@ -42,9 +42,9 @@ class TruckBehaviour(FSMBehaviour):
         await self.agent.stop()
 
 
-
 class AwaitingDispatch(State):
     name = "AwaitingDispatch"
+
     def __init__(self, shared_data: SharedData):
         super().__init__()
         self.shared_data: SharedData = shared_data
@@ -104,19 +104,19 @@ class AwaitingDispatch(State):
             self.shared_data["position"][direction] -= 1
 
 
-
 class EmptyingBin(State):
     name = "Emptying"
+
     def __init__(self, shared_data: SharedData):
         super().__init__()
         self.shared_data: SharedData = shared_data
+
     async def run(self):
         length = abs(self.shared_data["position"][0] - self.shared_data["current_container_pos"][0])
         length += abs(self.shared_data["position"][1] - self.shared_data["current_container_pos"][1])
         await sleep(length)
         self.shared_data["position"] = list(self.shared_data["current_container_pos"])
         await self.empty()
-
 
     async def empty(self):
         msg = Message(to=self.shared_data["connected_pole"])
@@ -136,11 +136,14 @@ class EmptyingBin(State):
         else:
             self.set_next_state(AwaitingDispatch.name)
 
+
 class Emptying(State):
     name = "EmptyingTruck"
+
     async def run(self):
         await sleep(60)
         self.set_next_state(AwaitingDispatch.name)
+
 
 class Bin(Agent):
     def __init__(self, *args, connected_pole, position):

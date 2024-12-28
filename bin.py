@@ -8,6 +8,7 @@ from random import randint
 from typing import TypedDict
 from general_functions import add_metadata
 
+
 class SharedData(TypedDict):
     fullness: int
     max_capacity: int
@@ -35,9 +36,9 @@ class BinBehaviour(FSMBehaviour):
         await self.agent.stop()
 
 
-
 class FillingBehv(State):
     name = "Filling"
+
     def __init__(self, shared_data: SharedData):
         super().__init__()
         self.shared_data: SharedData = shared_data
@@ -61,15 +62,17 @@ class FillingBehv(State):
         }
         add_metadata(msg)
 
-
         await self.send(msg)
         self.set_next_state(AwaitingPickup.name)
 
+
 class AwaitingPickup(State):
     name = "AwaitingPickup"
+
     def __init__(self, shared_data: SharedData):
         super().__init__()
         self.shared_data: SharedData = shared_data
+
     async def run(self):
         while True:  # endless listening for pickup
             msg = await self.receive(timeout=10)
@@ -82,6 +85,7 @@ class AwaitingPickup(State):
 
         self.shared_data["fullness"] = 0
         self.set_next_state(FillingBehv.name)
+
 
 class Bin(Agent):
     def __init__(self, *args, connected_pole, position):
