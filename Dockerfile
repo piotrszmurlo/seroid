@@ -1,9 +1,9 @@
-FROM python:3.10
+FROM python:3.12
 
 WORKDIR /app
 COPY . /app
 
-RUN pip install spade
+RUN pip install -r requirements.txt
 
 RUN chmod +x main.py
 CMD python -u main.py
