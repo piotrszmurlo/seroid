@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   server_hello:
     image: tigase/tigase-xmpp-server:8.0.0
@@ -16,10 +15,9 @@ services:
 
 
 
-  spade_hello:
-    image: spade_hello:latest
-    deploy:
-      resources:
-        limits:
-          cpus: ${CPUS}
-          memory: 512MB
+  agents:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - server_hello
