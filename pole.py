@@ -1,7 +1,7 @@
 import math
 
 from spade.agent import Agent
-from spade.behaviour import FSMBehaviour, State, OneShotBehaviour, CyclicBehaviour
+from spade.behaviour import OneShotBehaviour, CyclicBehaviour
 from spade.message import Message
 import json
 from copy import deepcopy
@@ -44,6 +44,8 @@ class PoleBehaviour(CyclicBehaviour):
                     break
         handler = DispatchHandler(f"{msg.metadata['replay_with']}@{SERVER_NAME}", "1234", shared_data=deepcopy(self.shared_data))
         await handler.start(auto_register=True)
+        self.shared_data['full_bin_id'] = None
+        self.shared_data['full_bin_pos'] = None
 
     async def send_confirmation(self, conversation_id, msg_id):
         msg = Message(to=self.shared_data['full_bin_id'])
