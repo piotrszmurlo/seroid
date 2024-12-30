@@ -4,8 +4,6 @@ from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State, OneShotBehaviour, CyclicBehaviour
 from spade.message import Message
 import json
-from asyncio import sleep
-from random import randint
 from copy import deepcopy
 
 from typing import TypedDict
@@ -45,7 +43,7 @@ class PoleBehaviour(CyclicBehaviour):
                     await self.send_confirmation(msg.metadata['conversation-id'], msg.metadata['reply-with'])
                     break
         handler = DispatchHandler(f"{msg.metadata['replay_with']}@{SERVER_NAME}", "1234", shared_data=deepcopy(self.shared_data))
-        await handler.start()
+        await handler.start(auto_register=True)
 
     async def send_confirmation(self, conversation_id, msg_id):
         msg = Message(to=self.shared_data['full_bin_id'])
@@ -124,7 +122,7 @@ class Pole(Agent):
         self.trucks = trucks
 
     async def setup(self):
-        print('Pole started')
+        print(f'Pole {self.jid} up and running')
         b = PoleBehaviour(self_ref=self.jid, trucks=self.trucks)
         self.add_behaviour(b)
 
@@ -134,6 +132,6 @@ class DispatchHandler(Agent):
         self.shared_data = shared_data
 
     async def setup(self):
-        print('Pole started')
+        print(f'Dispatch {self.jid} up and running')
         b = DispatchHandlerBehaviour(shared_data=self.shared_data)
         self.add_behaviour(b)

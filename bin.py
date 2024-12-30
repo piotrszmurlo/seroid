@@ -94,7 +94,7 @@ class Bin(Agent):
         self.position = position
 
     async def setup(self):
-        print("SenderAgent started")
+        print(f'Bin {self.jid} up and running')
         b = BinBehaviour(self.connected_pole, self.jid, self.position)
         b.add_state(FillingBehv.name, state=FillingBehv(b.shared_data), initial=True)
         b.add_state(AwaitingPickup.name, state=AwaitingPickup(b.shared_data))

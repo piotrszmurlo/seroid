@@ -152,7 +152,7 @@ class Truck(Agent):
         self.position = position
 
     async def setup(self):
-        print("SenderAgent started")
+        print(f'Truck {self.jid} up and running')
         b = TruckBehaviour(self.connected_pole, self.jid, self.position)
         b.add_state(AwaitingDispatch.name, state=AwaitingDispatch(b.shared_data), initial=True)
         b.add_state(EmptyingBin.name, state=EmptyingBin(b.shared_data))
