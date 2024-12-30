@@ -1,5 +1,7 @@
 import uuid
 
+SERVER_NAME = "server_hello"
+
 
 def create_hash():
     return uuid.uuid4().hex
