@@ -32,13 +32,14 @@ class PoleBehaviour(CyclicBehaviour):
             best_truck_pos=None,
             best_truck_dist=None
         )
+
     async def run(self):
         while True:  # endless listening for a bin full message
             msg = await self.receive(timeout=10)
             if msg:
                 body = json.loads(msg.body)
                 if body["type"] == "Container Full":
-                    print(f'{self.shared_data["self_ref"]} received Container Full message from {body['container']}')
+                    print(f'{self.shared_data["self_ref"]} received Container Full message from {body["container"]}')
                     self.shared_data['full_bin_id'] = body['container']
                     self.shared_data['full_bin_pos'] = (body['position']['lon'], body['position']['lat'])
                     await self.send_confirmation(msg.metadata['conversation_id'], msg.metadata['reply_with'])
@@ -50,7 +51,7 @@ class PoleBehaviour(CyclicBehaviour):
 
     async def send_confirmation(self, conversation_id, msg_id):
         msg = Message(to=self.shared_data['full_bin_id'])
-        msg.set_metadata("performative", "inform")
+        msg.set_metadata("performative", "confirm")
         msg.body = json.dumps({
             'type': 'Acknowledge Container Full',
             'container': str(self.shared_data['full_bin_id']),
@@ -89,7 +90,6 @@ class DispatchHandlerBehaviour(OneShotBehaviour):
                     print(f'{self.shared_data["self_ref"]} received position from {truck_id}')
                     await self.dispatch_truck(truck_id, (body['position']['lon'], body['position']['lat']))
         await self.send_dispatch()
-        
 
     async def dispatch_truck(self, truck_id, truck_pos):
         current_dist = math.dist(self.shared_data['full_bin_pos'], truck_pos)
@@ -99,11 +99,10 @@ class DispatchHandlerBehaviour(OneShotBehaviour):
             self.shared_data['best_truck_pos'] = truck_pos
             print(f'{self.shared_data["self_ref"]} dispatched {truck_id} as a new best truck - distance: {current_dist}')
         print(f'{self.shared_data["self_ref"]} dispatched {truck_id}')
-        
 
     async def send_position_request(self, truck_id):
         msg = Message(to=truck_id)
-        msg.set_metadata('performative', 'inform')
+        msg.set_metadata('performative', 'query')
         msg.body = json.dumps({
             'type': 'Request Position',
             'collector': str(truck_id)
@@ -114,7 +113,7 @@ class DispatchHandlerBehaviour(OneShotBehaviour):
 
     async def send_dispatch(self):
         msg = Message(to=self.shared_data['best_truck_id'])
-        msg.set_metadata('performative', 'inform')
+        msg.set_metadata('performative', 'request')
         msg.body = json.dumps({
             'type': 'Dispatch',
             'container': str(self.shared_data['full_bin_id']),
@@ -126,6 +125,7 @@ class DispatchHandlerBehaviour(OneShotBehaviour):
         add_metadata(msg)
         await self.send(msg)
 
+
 class Pole(Agent):
     def __init__(self, *args, trucks):
         super().__init__(*args)
@@ -135,6 +135,7 @@ class Pole(Agent):
         print(f'Pole {self.jid} up and running')
         b = PoleBehaviour(self_ref=self.jid, trucks=self.trucks)
         self.add_behaviour(b)
+
 
 class DispatchHandler(Agent):
     def __init__(self, *args, shared_data):

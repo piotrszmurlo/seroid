@@ -61,10 +61,9 @@ class AwaitingDispatch(State):
                     self.shared_data['connected_dispatcher'] = str(msg.sender)
                     print(f'{self.shared_data["self_ref"]} received Request Position message from {self.shared_data["connected_dispatcher"]}')
                     await self.send_position(msg.metadata["conversation_id"], msg.metadata["reply_with"])
-                
+
                 elif body["type"] == "Dispatch":
-                    print(f"{self.shared_data["self_ref"]}: Received dispatch request from {self.shared_data["connected_dispatcher"]}")
-                    # await self.send_confirmation(msg.metadata["conversation_id"], msg.metadata["reply_with"])
+                    print(f'{self.shared_data["self_ref"]}: Received dispatch request from {self.shared_data["connected_dispatcher"]}')
                     self.shared_data["current_container"] = body["container"]
                     self.shared_data["current_container_pos"] = (body["position"]["lon"], body["position"]["lat"])
                     print(f'{self.shared_data["self_ref"]}: heading to {self.shared_data["current_container"]}, pos: ({body["position"]["lon"]}, {body["position"]["lat"]})')
@@ -86,9 +85,8 @@ class AwaitingDispatch(State):
         await self.send(msg)
         print(f'{self.shared_data["self_ref"]}: sending position to {self.shared_data["connected_dispatcher"]}')
 
-
     def wander(self):
-        print(f"{self.shared_data["self_ref"]}: wandering...")
+        print(f'{self.shared_data["self_ref"]}: wandering...')
         for _ in range(10):
             self.step()
 
