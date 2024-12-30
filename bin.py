@@ -47,13 +47,13 @@ class FillingBehv(State):
         while True:
             if randint(0, 4) == 0:  # chance to fill in each tick
                 self.shared_data["fullness"] += 1
-                print(f"{self.shared_data["self_ref"]}: Capacity {self.shared_data["fullness"]}/{self.shared_data["max_capacity"]}")
+                print(f"{self.shared_data['self_ref']}: Capacity {self.shared_data['fullness']}/{self.shared_data['max_capacity']}")
             await sleep(1)
             if self.shared_data["fullness"] == self.shared_data["max_capacity"]:
-                print(f"{self.shared_data["self_ref"]}: Reached maximum capacity")
+                print(f'{self.shared_data["self_ref"]}: Reached maximum capacity')
                 break
         msg = Message(to=self.shared_data["connected_pole"])
-        msg.set_metadata("performative", "inform")
+        msg.set_metadata("performative", "request")
         msg.body = json.dumps({
             "type": "Container Full",
             "container": str(self.shared_data["self_ref"]),
@@ -63,7 +63,7 @@ class FillingBehv(State):
             }
         })
         add_metadata(msg)
-        print(f"{self.shared_data["self_ref"]}: Sending message ContainerFull to {self.shared_data["connected_pole"]}")
+        print(f'{self.shared_data["self_ref"]}: Sending message ContainerFull to {self.shared_data["connected_pole"]}')
         await self.send(msg)
         self.set_next_state(AwaitingPickup.name)
 
@@ -86,7 +86,7 @@ class AwaitingPickup(State):
                     break
 
         self.shared_data["fullness"] = 0
-        print(f"{self.shared_data["self_ref"]}: Container emptied")
+        print(f'{self.shared_data["self_ref"]}: Container emptied')
         self.set_next_state(FillingBehv.name)
 
 
