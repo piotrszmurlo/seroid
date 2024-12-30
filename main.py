@@ -26,12 +26,13 @@ class SenderAgent(Agent):
         b = self.InformBehav()
         self.add_behaviour(b)
 
+
 class ReceiverAgent(Agent):
     class RecvBehav(OneShotBehaviour):
         async def run(self):
             print("RecvBehav running")
 
-            msg = await self.receive(timeout=10) # wait for a message for 10 seconds
+            msg = await self.receive(timeout=10)  # wait for a message for 10 seconds
             if msg:
                 print("Message received with content: {}".format(msg.body))
             else:
@@ -46,7 +47,6 @@ class ReceiverAgent(Agent):
         template = Template()
         template.set_metadata("performative", "inform")
         self.add_behaviour(b, template)
-
 
 
 async def main():
@@ -70,4 +70,3 @@ async def main():
 
 if __name__ == "__main__":
     spade.run(main())
-
