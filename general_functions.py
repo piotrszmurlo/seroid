@@ -6,6 +6,7 @@ SERVER_NAME = "server_hello"
 def create_hash():
     return uuid.uuid4().hex
 
+
 def add_metadata(msg, *, conversation_id=None, in_reply_to=None):
     msg.set_metadata("language", "json")
     msg.set_metadata("ontology", "seroid")
