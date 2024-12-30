@@ -22,7 +22,7 @@ class BinBehaviour(FSMBehaviour):
         super().__init__()
         self.shared_data = SharedData(
             fullness=0,
-            max_capacity=20,
+            max_capacity=5,
             connected_pole=connected_pole,
             self_ref=self_ref,
             position=position
@@ -45,23 +45,25 @@ class FillingBehv(State):
 
     async def run(self):
         while True:
-            if randint(0, 10) == 0:  # 10% to fill in each tick
+            if randint(0, 4) == 0:  # chance to fill in each tick
                 self.shared_data["fullness"] += 1
+                print(f"{self.shared_data["self_ref"]}: Capacity {self.shared_data["fullness"]}/{self.shared_data["max_capacity"]}")
             await sleep(1)
             if self.shared_data["fullness"] == self.shared_data["max_capacity"]:
+                print(f"{self.shared_data["self_ref"]}: Reached maximum capacity")
                 break
         msg = Message(to=self.shared_data["connected_pole"])
         msg.set_metadata("performative", "inform")
-        msg.body = {
+        msg.body = json.dumps({
             "type": "Container Full",
-            "container": self.shared_data["self_ref"],
+            "container": str(self.shared_data["self_ref"]),
             "position": {
                 "lon": self.shared_data["position"][0],
                 "lat": self.shared_data["position"][0]
             }
-        }
+        })
         add_metadata(msg)
-
+        print(f"{self.shared_data["self_ref"]}: Sending message ContainerFull to {self.shared_data["connected_pole"]}")
         await self.send(msg)
         self.set_next_state(AwaitingPickup.name)
 
@@ -80,10 +82,11 @@ class AwaitingPickup(State):
                 body = json.loads(msg.body)
                 if body["type"] != "Empty Confirmation":
                     continue
-                if body["container"] == self.shared_data["self_ref"]:
+                if body["container"] == str(self.shared_data["self_ref"]):
                     break
 
         self.shared_data["fullness"] = 0
+        print(f"{self.shared_data["self_ref"]}: Container emptied")
         self.set_next_state(FillingBehv.name)
 
 

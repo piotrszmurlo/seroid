@@ -5,6 +5,7 @@ from pole import Pole
 from truck import Truck
 from general_functions import SERVER_NAME
 from random import randint
+import spade
 
 truck_num = 1
 bin_num = 1
@@ -15,7 +16,7 @@ class Config(TypedDict):
     trucks_per_pole: int
     bins_per_pole: int
 
-def main():
+async def main():
     global truck_num
     global bin_num
 
@@ -27,18 +28,17 @@ def main():
         pole_position = (randint(-100, 100), randint(-100, 100))
         truck_names = []
         for _ in range(config["trucks_per_pole"]):
-            truck_position = (
+            truck_position = [
                     pole_position[0] + randint(-10, 10),
                     pole_position[1] + randint(-10, 10)
-            )
+            ]
             truck_name = f"truck_{truck_num}@{SERVER_NAME}"
             truck_names.append(truck_name)
             truck_num += 1
-            truck_ = Truck(truck_name, "1234", connected_pole=pole_name, position=truck_position)
-            truck_.start(auto_register=True)
-        pole = Pole(pole_name, "1234", trucks=truck_names)
-        pole.start(auto_register=True)
-
+            truck_ = Truck(truck_name, "admin", connected_pole=pole_name, position=truck_position)
+            await truck_.start(auto_register=True)
+        pole = Pole(pole_name, "admin", trucks=truck_names)
+        await pole.start(auto_register=True)
         for _ in range(config["bins_per_pole"]):
             bin_position = (
                 pole_position[0] + randint(-10, 10),
@@ -46,8 +46,9 @@ def main():
             )
             bin_name = f"bin_{bin_num}@{SERVER_NAME}"
             bin_num += 1
-            bin_ = Bin(bin_name, "1234", connected_pole=pole_name, position=bin_position)
-            bin_.start(auto_register=True)
+            print(bin_name)
+            bin = Bin(bin_name, "admin", connected_pole=pole_name, position=bin_position)
+            await bin.start(auto_register=True)
 
 if __name__ == '__main__':
-    main()
+    spade.run(main())

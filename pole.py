@@ -34,15 +34,16 @@ class PoleBehaviour(CyclicBehaviour):
         )
     async def run(self):
         while True:  # endless listening for a bin full message
-            msg = await self.receive()
+            msg = await self.receive(timeout=10)
             if msg:
                 body = json.loads(msg.body)
                 if body["type"] == "Container Full":
+                    print(f'{self.shared_data["self_ref"]} received Container Full message from {body['container']}')
                     self.shared_data['full_bin_id'] = body['container']
                     self.shared_data['full_bin_pos'] = (body['position']['lon'], body['position']['lat'])
-                    await self.send_confirmation(msg.metadata['conversation-id'], msg.metadata['reply-with'])
+                    await self.send_confirmation(msg.metadata['conversation_id'], msg.metadata['reply_with'])
                     break
-        handler = DispatchHandler(f"{msg.metadata['replay_with']}@{SERVER_NAME}", "1234", shared_data=deepcopy(self.shared_data))
+        handler = DispatchHandler(f"{msg.metadata['reply_with']}@{SERVER_NAME}", "1234", shared_data=deepcopy(self.shared_data))
         await handler.start(auto_register=True)
         self.shared_data['full_bin_id'] = None
         self.shared_data['full_bin_pos'] = None
@@ -50,13 +51,14 @@ class PoleBehaviour(CyclicBehaviour):
     async def send_confirmation(self, conversation_id, msg_id):
         msg = Message(to=self.shared_data['full_bin_id'])
         msg.set_metadata("performative", "inform")
-        msg.body = {
+        msg.body = json.dumps({
             'type': 'Acknowledge Container Full',
-            'container': self.shared_data['full_bin_id'],
+            'container': str(self.shared_data['full_bin_id']),
             'position': self.shared_data['full_bin_pos']
-        }
-        add_metadata(msg, conversation_id=conversation_id, in_replay_to=msg_id)
+        })
+        add_metadata(msg, conversation_id=conversation_id, in_reply_to=msg_id)
         await self.send(msg)
+        print(f'{self.shared_data["self_ref"]} sent confirmation message to {self.shared_data["full_bin_id"]}')
 
     async def on_start(self):
         return await super().on_start()
@@ -83,9 +85,11 @@ class DispatchHandlerBehaviour(OneShotBehaviour):
             msg = await self.receive(timeout=15)
             if msg:
                 body = json.loads(msg.body)
-                if body['type'] == 'Send Position':
+                if str(body['type']) == 'Send Position':
+                    print(f'{self.shared_data["self_ref"]} received position from {truck_id}')
                     await self.dispatch_truck(truck_id, (body['position']['lon'], body['position']['lat']))
         await self.send_dispatch()
+        
 
     async def dispatch_truck(self, truck_id, truck_pos):
         current_dist = math.dist(self.shared_data['full_bin_pos'], truck_pos)
@@ -93,28 +97,32 @@ class DispatchHandlerBehaviour(OneShotBehaviour):
             self.shared_data['best_truck_dist'] = current_dist
             self.shared_data['best_truck_id'] = truck_id
             self.shared_data['best_truck_pos'] = truck_pos
+            print(f'{self.shared_data["self_ref"]} dispatched {truck_id} as a new best truck - distance: {current_dist}')
+        print(f'{self.shared_data["self_ref"]} dispatched {truck_id}')
+        
 
     async def send_position_request(self, truck_id):
         msg = Message(to=truck_id)
         msg.set_metadata('performative', 'inform')
-        msg.body = {
+        msg.body = json.dumps({
             'type': 'Request Position',
-            'collector': truck_id
-        }
+            'collector': str(truck_id)
+        })
         add_metadata(msg)
+        print(f'{self.shared_data["self_ref"]} sent position request to {truck_id}')
         await self.send(msg)
 
     async def send_dispatch(self):
         msg = Message(to=self.shared_data['best_truck_id'])
         msg.set_metadata('performative', 'inform')
-        msg.body = {
+        msg.body = json.dumps({
             'type': 'Dispatch',
-            'container': self.shared_data['full_bin_id'],
+            'container': str(self.shared_data['full_bin_id']),
             'position': {
                 'lon': self.shared_data['full_bin_pos'][0],
                 'lat': self.shared_data['full_bin_pos'][1]
             }
-        }
+        })
         add_metadata(msg)
         await self.send(msg)
 
@@ -134,6 +142,6 @@ class DispatchHandler(Agent):
         self.shared_data = shared_data
 
     async def setup(self):
-        print(f'Dispatch {self.jid} up and running')
+        print(f'DispatchHandler {self.jid} up and running')
         b = DispatchHandlerBehaviour(shared_data=self.shared_data)
         self.add_behaviour(b)
