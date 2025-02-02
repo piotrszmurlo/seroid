@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import yaml
 from typing import TypedDict
 from bin import Bin

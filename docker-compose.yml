@@ -7,12 +7,11 @@ services:
     environment:
       - DB_ROOT_USER=admin
       - DB_ROOT_PASS=admin
-      - ADMIN_JID=admin@server_hello 
+      - ADMIN_JID=admin@server_hello
       - ADMIN_PASSWORD=admin
     volumes:
       - ./tigase/config/tigase.conf:/home/tigase/tigase-server/etc/tigase.conf
       - ./tigase/config/config.tdsl:/home/tigase/tigase-server/etc/config.tdsl
-
 
 
   agents:
@@ -21,3 +20,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - server_hello
+    volumes:
+      - .:/project
+    restart: "no"
+    entrypoint: ["bash", "-c", "cd /project/ && /project/main_run.py"]
