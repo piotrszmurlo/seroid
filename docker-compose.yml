@@ -23,4 +23,4 @@ services:
     volumes:
       - .:/project
     restart: "no"
-    entrypoint: ["bash", "-c", "cd /project/ && /project/main_run.py"]
+    entrypoint: ["bash", "-c", "cd /project/ && python3 /project/main_run.py"]
