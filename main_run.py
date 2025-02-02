@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+from time import sleep
+
+print("Awaiting for server to stand up", flush=True)
+sleep(20)
+print("Finished waiting", flush=True)
+
 import yaml
 from typing import TypedDict
 from bin import Bin
@@ -47,9 +53,10 @@ async def main():
             )
             bin_name = f"bin_{bin_num}@{SERVER_NAME}"
             bin_num += 1
-            print(bin_name)
+            print(bin_name, flush=True)
             bin = Bin(bin_name, "admin", connected_pole=pole_name, position=bin_position)
             await bin.start(auto_register=True)
+
 
 if __name__ == '__main__':
     spade.run(main())
